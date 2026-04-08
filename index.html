@@ -1,0 +1,1440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GMC Audit Tool — User Guide</title>
+
+    <!-- Plus Jakarta Sans — Pastel Geometry font -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        /* =============================================
+           CSS THEME — Pastel Geometry (Sparro variant)
+           Blue accent, soft sky backgrounds, white cards
+           ============================================= */
+        :root {
+            --bg-primary:    #cddce9;
+            --bg-slide2:     #c4d7e8;
+            --bg-slide3:     #bccfe2;
+            --bg-slide4:     #c8daea;
+            --bg-slide5:     #b8cedd;
+
+            --card-bg:       #faf9f7;
+            --text-primary:  #18202e;
+            --text-secondary:#596579;
+            --text-muted:    #8494a7;
+
+            --accent-blue:   #2795f0;
+            --accent-light:  #deeefb;
+            --accent-mint:   #8ecfbe;
+            --accent-green:  #5bbf9a;
+            --accent-amber:  #f4c94e;
+            --accent-red:    #f07070;
+
+            --pill-1: #f0b4d4;
+            --pill-2: #a8d4c4;
+            --pill-3: #9b8dc4;
+            --pill-4: #f4c994;
+            --pill-5: #7fc8e0;
+
+            --font-main: 'Plus Jakarta Sans', sans-serif;
+
+            /* Typography — all clamp() */
+            --title-size:  clamp(1.5rem, 4vw, 2.8rem);
+            --h2-size:     clamp(1.1rem, 2.6vw, 1.9rem);
+            --h3-size:     clamp(0.85rem, 1.6vw, 1.15rem);
+            --body-size:   clamp(0.7rem, 1.2vw, 0.93rem);
+            --small-size:  clamp(0.6rem, 0.9vw, 0.78rem);
+            --micro-size:  clamp(0.52rem, 0.75vw, 0.67rem);
+
+            /* Spacing */
+            --slide-padding: clamp(1.2rem, 3.5vw, 3.5rem);
+            --content-gap:   clamp(0.55rem, 1.5vw, 1.3rem);
+            --element-gap:   clamp(0.3rem, 0.7vw, 0.6rem);
+
+            --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+            --radius-card: 16px;
+            --radius-sm:   10px;
+        }
+
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: var(--font-main);
+            color: var(--text-primary);
+            background: var(--bg-primary);
+        }
+
+        /* =============================================
+           VIEWPORT BASE (mandatory)
+           ============================================= */
+        html, body { height: 100%; overflow-x: hidden; }
+
+        html {
+            scroll-snap-type: y mandatory;
+            scroll-behavior: smooth;
+        }
+
+        .slide {
+            width: 100vw;
+            height: 100vh;
+            height: 100dvh;
+            overflow: hidden;
+            scroll-snap-align: start;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .slide-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            max-height: 100%;
+            overflow: hidden;
+            padding: var(--slide-padding);
+        }
+
+        /* Responsive breakpoints */
+        @media (max-height: 700px) {
+            :root {
+                --slide-padding: clamp(0.7rem, 2.5vw, 1.8rem);
+                --content-gap:   clamp(0.38rem, 1vw, 0.8rem);
+                --title-size:    clamp(1.15rem, 3.2vw, 2rem);
+                --h2-size:       clamp(0.95rem, 2.2vw, 1.45rem);
+                --h3-size:       clamp(0.76rem, 1.4vw, 0.98rem);
+            }
+        }
+
+        @media (max-height: 600px) {
+            :root {
+                --slide-padding: clamp(0.5rem, 2vw, 1.2rem);
+                --content-gap:   clamp(0.28rem, 0.8vw, 0.55rem);
+            }
+            .nav-dots, .decorative { display: none; }
+        }
+
+        @media (max-height: 500px) {
+            :root {
+                --slide-padding: clamp(0.4rem, 1.8vw, 0.9rem);
+                --title-size:    clamp(0.95rem, 2.8vw, 1.4rem);
+            }
+        }
+
+        @media (max-width: 640px) {
+            .steps-row        { grid-template-columns: 1fr !important; }
+            .two-col          { grid-template-columns: 1fr !important; }
+            .tabs-row         { grid-template-columns: 1fr !important; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                transition-duration: 0.2s !important;
+            }
+            html { scroll-behavior: auto; }
+        }
+
+        /* =============================================
+           ANIMATIONS
+           ============================================= */
+        .reveal {
+            opacity: 0;
+            transform: translateY(18px);
+            transition: opacity 0.52s var(--ease-out-expo),
+                        transform 0.52s var(--ease-out-expo);
+        }
+
+        .slide.visible .reveal       { opacity: 1; transform: translateY(0); }
+        .reveal:nth-child(1) { transition-delay: 0.04s; }
+        .reveal:nth-child(2) { transition-delay: 0.13s; }
+        .reveal:nth-child(3) { transition-delay: 0.21s; }
+        .reveal:nth-child(4) { transition-delay: 0.29s; }
+        .reveal:nth-child(5) { transition-delay: 0.37s; }
+        .reveal:nth-child(6) { transition-delay: 0.45s; }
+
+        /* =============================================
+           INLINE EDITOR — toggle button + edit styles
+           Hover top-left corner or press E to activate
+           ============================================= */
+
+        /* Invisible hotzone in the top-left corner */
+        .edit-hotzone {
+            position: fixed; top: 0; left: 0;
+            width: 80px; height: 80px;
+            z-index: 10000; cursor: pointer;
+        }
+
+        /* Toggle button — JS controls visibility via .show / .active classes */
+        .edit-toggle {
+            position: fixed; top: 14px; left: 14px;
+            z-index: 10001;
+            background: var(--card-bg);
+            border: 1.5px solid rgba(39,149,240,0.3);
+            color: var(--accent-blue);
+            font-family: var(--font-main);
+            font-size: var(--small-size); font-weight: 700;
+            padding: 0.4em 0.9em; border-radius: 100px;
+            cursor: pointer;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.25s ease, background 0.2s;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+            display: flex; align-items: center; gap: 0.35em;
+        }
+        .edit-toggle.show,
+        .edit-toggle.active { opacity: 1; pointer-events: auto; }
+        .edit-toggle.active {
+            background: var(--accent-blue); color: #fff;
+            border-color: var(--accent-blue);
+        }
+        .edit-toggle:hover { background: var(--accent-light); }
+        .edit-toggle.active:hover { background: #1a7fd4; }
+
+        /* Save/export button — only visible in edit mode */
+        .edit-save {
+            position: fixed; top: 14px; left: 120px;
+            z-index: 10001;
+            background: var(--card-bg);
+            border: 1.5px solid rgba(39,149,240,0.3);
+            color: var(--text-secondary);
+            font-family: var(--font-main);
+            font-size: var(--small-size); font-weight: 700;
+            padding: 0.4em 0.9em; border-radius: 100px;
+            cursor: pointer;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.25s ease, background 0.2s;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+        }
+        .edit-save.show { opacity: 1; pointer-events: auto; }
+        .edit-save:hover { background: var(--accent-light); color: var(--accent-blue); }
+
+        /* Edit mode visual cues on editable elements */
+        body.edit-mode [contenteditable="true"] {
+            outline: 2px dashed rgba(39,149,240,0.45);
+            border-radius: 4px;
+            cursor: text;
+        }
+        body.edit-mode [contenteditable="true"]:focus {
+            outline: 2px solid var(--accent-blue);
+            background: rgba(39,149,240,0.05);
+        }
+
+        /* =============================================
+           PROGRESS BAR
+           ============================================= */
+        .progress-bar {
+            position: fixed; top: 0; left: 0; height: 3px;
+            background: var(--accent-blue); width: 0%;
+            z-index: 200; transition: width 0.35s ease;
+        }
+
+        /* =============================================
+           NAV DOTS
+           ============================================= */
+        .nav-dots {
+            position: fixed; right: clamp(12px, 2vw, 22px); top: 50%;
+            transform: translateY(-50%);
+            display: flex; flex-direction: column;
+            gap: clamp(7px, 1.2vh, 12px); z-index: 100;
+        }
+
+        .nav-dot {
+            width: clamp(7px, 1vw, 10px);
+            height: clamp(7px, 1vw, 10px);
+            border-radius: 50%;
+            background: rgba(255,255,255,0.35);
+            border: 2px solid rgba(255,255,255,0.65);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .nav-dot.active {
+            background: var(--text-primary);
+            border-color: var(--text-primary);
+            transform: scale(1.25);
+        }
+
+        /* =============================================
+           DECORATIVE PILLS — Pastel Geometry signature
+           ============================================= */
+        .pill-stack {
+            position: absolute; right: 0; top: 50%;
+            transform: translateY(-50%);
+            display: flex; flex-direction: column;
+            gap: clamp(4px, 0.7vh, 8px);
+            align-items: flex-end; pointer-events: none;
+        }
+
+        .pill { border-radius: 100px 0 0 100px; width: clamp(10px, 1.5vw, 18px); }
+        .pill:nth-child(1) { height: clamp(28px, 5vh, 48px);   background: var(--pill-1); }
+        .pill:nth-child(2) { height: clamp(48px, 9vh, 80px);   background: var(--pill-2); }
+        .pill:nth-child(3) { height: clamp(70px, 13vh, 120px); background: var(--pill-3); }
+        .pill:nth-child(4) { height: clamp(48px, 9vh, 80px);   background: var(--pill-4); }
+        .pill:nth-child(5) { height: clamp(28px, 5vh, 48px);   background: var(--pill-5); }
+
+        /* =============================================
+           SHARED COMPONENTS
+           ============================================= */
+        .tag-badge {
+            background: rgba(255,255,255,0.75);
+            border: 1.5px solid rgba(39, 149, 240, 0.25);
+            color: var(--accent-blue);
+            font-size: var(--micro-size); font-weight: 700;
+            letter-spacing: 0.14em; text-transform: uppercase;
+            padding: 0.3em 1em; border-radius: 100px;
+            display: inline-block;
+        }
+
+        .page-title {
+            font-size: var(--title-size); font-weight: 800;
+            color: var(--text-primary); text-align: center; line-height: 1.15;
+        }
+
+        .page-subtitle {
+            font-size: var(--body-size); color: var(--text-secondary);
+            text-align: center; line-height: 1.5;
+        }
+
+        /* Step link button */
+        .step-link {
+            display: inline-flex; align-items: center; gap: 0.3em;
+            font-size: var(--small-size); font-weight: 700;
+            color: var(--accent-blue); background: var(--accent-light);
+            padding: 0.4em 0.9em; border-radius: 100px;
+            text-decoration: none; margin-top: 0.2em;
+            transition: background 0.2s, transform 0.15s;
+            width: fit-content;
+        }
+        .step-link:hover { background: #c0ddf6; transform: translateY(-1px); }
+
+        /* Panel card */
+        .panel {
+            background: var(--card-bg);
+            border-radius: var(--radius-card);
+            padding: clamp(0.8rem, 1.8vw, 1.3rem);
+            box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+        }
+
+        .panel-heading {
+            font-size: var(--h3-size); font-weight: 800;
+            color: var(--text-primary);
+            margin-bottom: clamp(0.3rem, 0.6vw, 0.5rem);
+        }
+
+        .panel-note {
+            font-size: var(--small-size); color: var(--text-secondary);
+            margin-bottom: clamp(0.35rem, 0.7vw, 0.6rem);
+            line-height: 1.4;
+        }
+
+        /* Bottom handoff note */
+        .handoff-note {
+            background: rgba(255,255,255,0.55);
+            border-radius: 100px;
+            padding: 0.4em 1.4em;
+            font-size: var(--small-size);
+            color: var(--text-secondary);
+            text-align: center;
+        }
+
+        /* =============================================
+           SLIDE 1 — OVERVIEW (title + 4 step cards)
+           ============================================= */
+        .slide-1 { background: var(--bg-primary); }
+
+        .s1-inner {
+            display: flex; flex-direction: column;
+            align-items: center; gap: var(--content-gap);
+            max-width: min(92vw, 1080px); margin: 0 auto; width: 100%;
+        }
+
+        .steps-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: clamp(0.6rem, 1.5vw, 1.1rem);
+            width: 100%;
+        }
+
+        .step-card {
+            background: var(--card-bg);
+            border-radius: var(--radius-card);
+            padding: clamp(0.75rem, 1.6vw, 1.2rem);
+            box-shadow: 0 4px 22px rgba(0,0,0,0.07);
+            display: flex; flex-direction: column;
+            gap: var(--element-gap);
+            position: relative; overflow: hidden;
+        }
+
+        .step-num {
+            font-size: var(--micro-size); font-weight: 800;
+            letter-spacing: 0.1em; text-transform: uppercase;
+            color: var(--accent-blue);
+        }
+
+        .step-title {
+            font-size: var(--h3-size); font-weight: 800;
+            color: var(--text-primary); line-height: 1.2;
+        }
+
+        .step-desc {
+            font-size: var(--small-size); color: var(--text-secondary);
+            line-height: 1.45;
+        }
+
+        /* Color bar accent on each step card */
+        .step-card::before {
+            content: '';
+            position: absolute; top: 0; left: 0; right: 0; height: 3px;
+            border-radius: var(--radius-card) var(--radius-card) 0 0;
+        }
+        .step-card:nth-child(1)::before { background: var(--pill-5); }
+        .step-card:nth-child(2)::before { background: var(--pill-2); }
+        .step-card:nth-child(3)::before { background: var(--pill-4); }
+        .step-card:nth-child(4)::before { background: var(--pill-1); }
+
+        /* =============================================
+           SLIDE 2 — STEP 1: EXPORT FEED
+           ============================================= */
+        .slide-2 { background: var(--bg-slide2); }
+
+        .s2-inner {
+            display: flex; flex-direction: column;
+            gap: var(--content-gap);
+            max-width: min(88vw, 820px); margin: 0 auto; width: 100%;
+        }
+
+        .slide-label {
+            display: flex; align-items: center; gap: 0.5em;
+        }
+
+        .step-badge {
+            background: var(--accent-blue); color: #fff;
+            font-size: var(--micro-size); font-weight: 800;
+            letter-spacing: 0.1em; text-transform: uppercase;
+            padding: 0.3em 0.9em; border-radius: 100px;
+            display: inline-block;
+        }
+
+        .slide-title {
+            font-size: var(--h2-size); font-weight: 800;
+            color: var(--text-primary); line-height: 1.2;
+        }
+
+        /* Numbered steps list */
+        .steps-list {
+            display: flex; flex-direction: column;
+            gap: clamp(0.4rem, 1vh, 0.8rem);
+        }
+
+        .step-item {
+            display: flex; align-items: flex-start; gap: 0.75em;
+            background: var(--card-bg);
+            border-radius: var(--radius-sm);
+            padding: clamp(0.55rem, 1.2vw, 0.9rem) clamp(0.7rem, 1.5vw, 1.1rem);
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+        }
+
+        .step-circle {
+            width: clamp(22px, 2.2vw, 28px);
+            height: clamp(22px, 2.2vw, 28px);
+            border-radius: 50%;
+            background: var(--accent-blue);
+            color: #fff;
+            font-size: var(--micro-size); font-weight: 800;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0; margin-top: 1px;
+        }
+
+        .step-text {
+            font-size: var(--body-size); color: var(--text-primary);
+            line-height: 1.45; flex: 1;
+        }
+
+        /* Warning / tip note */
+        .tip-note {
+            background: rgba(255,255,255,0.6);
+            border-left: 3px solid var(--accent-amber);
+            border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+            padding: 0.5em 0.9em;
+            font-size: var(--small-size); color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        /* =============================================
+           SLIDE 3 — STEP 2: CUSTOMISE RULES
+           ============================================= */
+        .slide-3 { background: var(--bg-slide3); }
+
+        .s3-inner {
+            display: flex; flex-direction: column;
+            gap: var(--content-gap);
+            max-width: min(92vw, 1020px); margin: 0 auto; width: 100%;
+        }
+
+        .two-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: clamp(0.6rem, 1.4vw, 1rem);
+        }
+
+        /* CAN change panel */
+        .can-panel {
+            background: var(--card-bg);
+            border-radius: var(--radius-card);
+            padding: clamp(0.7rem, 1.6vw, 1.1rem);
+            box-shadow: 0 4px 22px rgba(0,0,0,0.07);
+        }
+
+        .can-panel .panel-heading { color: var(--accent-green); }
+
+        /* CANNOT change panel */
+        .cannot-panel {
+            background: var(--card-bg);
+            border-radius: var(--radius-card);
+            padding: clamp(0.7rem, 1.6vw, 1.1rem);
+            box-shadow: 0 4px 22px rgba(0,0,0,0.07);
+        }
+
+        .cannot-panel .panel-heading { color: var(--text-muted); }
+
+        /* Table inside CAN panel */
+        .rules-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: var(--small-size);
+        }
+
+        .rules-table tr + tr td { border-top: 1px solid rgba(0,0,0,0.06); }
+
+        .rules-table td {
+            padding: 0.35em 0;
+            vertical-align: top;
+            line-height: 1.35;
+        }
+
+        .rules-table td:first-child {
+            font-weight: 700; color: var(--text-primary);
+            padding-right: 0.6em; width: 38%;
+        }
+
+        .rules-table td:last-child { color: var(--text-secondary); }
+
+        /* Hardcoded chips */
+        .chip-group {
+            display: flex; flex-wrap: wrap; gap: 0.25em;
+            margin-top: 0.4em;
+        }
+
+        .chip {
+            background: #e8f0fc;
+            color: #4070c8;
+            font-size: var(--micro-size); font-weight: 600;
+            padding: 0.2em 0.6em; border-radius: 100px;
+        }
+
+        /* =============================================
+           SLIDE 4 — STEP 3: RUN THE AUDIT
+           ============================================= */
+        .slide-4 { background: var(--bg-slide4); }
+
+        .s4-inner {
+            display: flex; flex-direction: column;
+            gap: var(--content-gap);
+            max-width: min(88vw, 820px); margin: 0 auto; width: 100%;
+        }
+
+        /* Form fields list */
+        .fields-list {
+            display: flex; flex-direction: column;
+            gap: clamp(0.3rem, 0.8vh, 0.55rem);
+        }
+
+        .field-item {
+            display: flex; align-items: flex-start; gap: 0.6em;
+            background: var(--card-bg);
+            border-radius: var(--radius-sm);
+            padding: clamp(0.5rem, 1.1vw, 0.8rem) clamp(0.7rem, 1.4vw, 1rem);
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+        }
+
+        .field-dot {
+            width: 6px; height: 6px; border-radius: 50%;
+            background: var(--accent-blue);
+            flex-shrink: 0; margin-top: 0.4em;
+        }
+
+        .field-name {
+            font-weight: 700; color: var(--text-primary);
+            font-size: var(--body-size);
+        }
+
+        .field-hint {
+            font-size: var(--small-size); color: var(--text-secondary);
+            margin-top: 0.1em; line-height: 1.35;
+        }
+
+        /* Timing note */
+        .timing-pill {
+            background: rgba(255,255,255,0.6);
+            border-radius: 100px;
+            padding: 0.45em 1.3em;
+            font-size: var(--small-size); color: var(--text-secondary);
+            display: inline-flex; align-items: center; gap: 0.4em;
+            width: fit-content;
+        }
+
+        .timing-dot {
+            width: 7px; height: 7px; border-radius: 50%;
+            background: var(--accent-mint);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50%       { opacity: 0.5; transform: scale(0.75); }
+        }
+
+        /* =============================================
+           SLIDE 5 — STEP 4: READ YOUR RESULTS
+           ============================================= */
+        .slide-5 { background: var(--bg-slide5); }
+
+        .s5-inner {
+            display: flex; flex-direction: column;
+            gap: var(--content-gap);
+            max-width: min(92vw, 1040px); margin: 0 auto; width: 100%;
+        }
+
+        .s5-cols {
+            display: grid;
+            grid-template-columns: 1.15fr 0.85fr;
+            gap: clamp(0.6rem, 1.4vw, 1rem);
+        }
+
+        @media (max-width: 640px) {
+            .s5-cols { grid-template-columns: 1fr; }
+        }
+
+        /* Report tabs */
+        .tabs-list {
+            display: flex; flex-direction: column;
+            gap: clamp(0.25rem, 0.6vh, 0.45rem);
+        }
+
+        .tab-item {
+            display: flex; align-items: flex-start; gap: 0.7em;
+            background: var(--card-bg);
+            border-radius: var(--radius-sm);
+            padding: clamp(0.45rem, 1vw, 0.75rem) clamp(0.65rem, 1.3vw, 0.95rem);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+        }
+
+        .tab-pill {
+            font-size: var(--micro-size); font-weight: 700;
+            background: #e8f0fc; color: #4070c8;
+            padding: 0.2em 0.6em; border-radius: 6px;
+            white-space: nowrap; flex-shrink: 0;
+            margin-top: 1px; font-family: 'Courier New', monospace;
+        }
+
+        .tab-desc {
+            font-size: var(--small-size); color: var(--text-secondary);
+            line-height: 1.35;
+        }
+
+        /* Health score panel */
+        .score-panel {
+            background: var(--card-bg);
+            border-radius: var(--radius-card);
+            padding: clamp(0.75rem, 1.6vw, 1.15rem);
+            box-shadow: 0 4px 22px rgba(0,0,0,0.08);
+            display: flex; flex-direction: column;
+            gap: clamp(0.3rem, 0.7vh, 0.5rem);
+        }
+
+        .score-row {
+            display: flex; align-items: center; gap: 0.6em;
+            padding: 0.3em 0;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+        .score-row:last-child { border-bottom: none; }
+
+        .score-bar {
+            width: 4px; height: clamp(28px, 4vh, 38px);
+            border-radius: 4px; flex-shrink: 0;
+        }
+        .score-bar.excellent { background: #4caf7d; }
+        .score-bar.good      { background: #8ecf6b; }
+        .score-bar.needs     { background: var(--accent-amber); }
+        .score-bar.critical  { background: var(--accent-red); }
+
+        .score-range {
+            font-size: var(--small-size); font-weight: 800;
+            color: var(--text-primary); white-space: nowrap;
+            width: clamp(54px, 5vw, 72px);
+        }
+
+        .score-label {
+            font-size: var(--small-size); color: var(--text-secondary);
+            line-height: 1.3;
+        }
+
+        .score-tip {
+            font-size: var(--micro-size); font-weight: 700;
+            color: var(--accent-blue);
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- Edit hotzone (top-left invisible trigger) -->
+    <div class="edit-hotzone" id="editHotzone"></div>
+
+    <!-- Edit mode toggle button -->
+    <button class="edit-toggle" id="editToggle" title="Toggle edit mode (E)">
+        <span id="editIcon">✏️</span>
+        <span id="editLabel">Edit</span>
+    </button>
+
+    <!-- Save to file button (visible in edit mode, uses File System Access API) -->
+    <button class="edit-save" id="editSave" title="Save changes directly to this HTML file">Save to file</button>
+
+    <!-- Progress bar -->
+    <div class="progress-bar" id="progressBar"></div>
+
+    <!-- Nav dots -->
+    <nav class="nav-dots" id="navDots" aria-label="Slide navigation"></nav>
+
+    <!-- ======================================================
+         SLIDE 1 — OVERVIEW
+         Title + 4 step preview cards in 2x2 grid
+         ====================================================== -->
+    <section class="slide slide-1" id="slide-1" aria-label="Overview">
+        <div class="slide-content">
+            <div class="s1-inner">
+
+                <div class="reveal">
+                    <span class="tag-badge">GMC Audit Tool</span>
+                </div>
+
+                <h1 class="page-title reveal">
+                    Automated feed health checks<br>in 4 steps
+                </h1>
+
+                <p class="page-subtitle reveal">
+                    Check your client's product feed against 19+ quality rules.<br>
+                    Get a health score and a breakdown of every issue, so you know exactly what to fix.
+                </p>
+
+                <!-- 2x2 step cards -->
+                <div class="steps-row reveal">
+                    <div class="step-card">
+                        <span class="step-num">Step 1</span>
+                        <span class="step-title">Export your feed</span>
+                        <span class="step-desc">Download from Google Merchant Center and paste into the template.</span>
+                    </div>
+                    <div class="step-card">
+                        <span class="step-num">Step 2</span>
+                        <span class="step-title">Customise rules</span>
+                        <span class="step-desc">Add, edit, or turn off checks in the config tab before running.</span>
+                    </div>
+                    <div class="step-card">
+                        <span class="step-num">Step 3</span>
+                        <span class="step-title">Run the audit</span>
+                        <span class="step-desc">Submit the form with your sheet link. Results ready in 2-3 min.</span>
+                    </div>
+                    <div class="step-card">
+                        <span class="step-num">Step 4</span>
+                        <span class="step-title">Read your results</span>
+                        <span class="step-desc">Open the auto-generated report and fix from the lowest scores first.</span>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Decorative pills -->
+        <div class="pill-stack decorative" aria-hidden="true">
+            <div class="pill"></div>
+            <div class="pill"></div>
+            <div class="pill"></div>
+            <div class="pill"></div>
+            <div class="pill"></div>
+        </div>
+    </section>
+
+    <!-- ======================================================
+         SLIDE 2 — STEP 1: EXPORT YOUR FEED
+         ====================================================== -->
+    <section class="slide slide-2" id="slide-2" aria-label="Step 1 — Export your feed">
+        <div class="slide-content">
+            <div class="s2-inner">
+
+                <div class="slide-label reveal">
+                    <span class="step-badge">Step 1</span>
+                    <span class="tag-badge">Export your feed</span>
+                </div>
+
+                <h2 class="slide-title reveal">Get your products into the template</h2>
+
+                <div class="steps-list reveal">
+                    <div class="step-item">
+                        <div class="step-circle">1</div>
+                        <div class="step-text">
+                            Go to Google Merchant Center and navigate to <strong>Products &gt; All Products</strong>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-circle">2</div>
+                        <div class="step-text">
+                            Click <strong>Download</strong> (top right) and export as a spreadsheet or TSV
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-circle">3</div>
+                        <div class="step-text">
+                            Open the <strong>Product Feed Template</strong> and paste your product data in
+                        </div>
+                    </div>
+                </div>
+
+                <div class="reveal">
+                    <a href="https://docs.google.com/spreadsheets/d/1tOPNiTvBmlRLC676PlLOxQmUTLoqPiUEhUgA3xIZsb4/edit?gid=1840354516#gid=1840354516"
+                       class="step-link" target="_blank" rel="noopener">
+                        Open Product Feed Template &rarr;
+                    </a>
+                </div>
+
+                <div class="tip-note reveal">
+                    Make a copy of this template for each client. Do not edit the original.
+                </div>
+
+            </div>
+        </div>
+
+        <div class="pill-stack decorative" aria-hidden="true">
+            <div class="pill"></div>
+            <div class="pill"></div>
+            <div class="pill"></div>
+            <div class="pill"></div>
+            <div class="pill"></div>
+        </div>
+    </section>
+
+    <!-- ======================================================
+         SLIDE 3 — STEP 2: CUSTOMISE RULES
+         ====================================================== -->
+    <section class="slide slide-3" id="slide-3" aria-label="Step 2 — Customise rules">
+        <div class="slide-content">
+            <div class="s3-inner">
+
+                <div class="slide-label reveal">
+                    <span class="step-badge">Step 2</span>
+                    <span class="tag-badge">Optional but recommended</span>
+                </div>
+
+                <h2 class="slide-title reveal">Customise your audit rules</h2>
+
+                <div class="two-col reveal">
+
+                    <!-- CAN change -->
+                    <div class="can-panel">
+                        <p class="panel-heading">What you can change</p>
+                        <p class="panel-note">
+                            Open the <a href="https://docs.google.com/spreadsheets/d/1tOPNiTvBmlRLC676PlLOxQmUTLoqPiUEhUgA3xIZsb4/edit?gid=1793166184#gid=1793166184"
+                                style="color: var(--accent-blue); font-weight: 700; text-decoration: none;" target="_blank" rel="noopener">
+                                Custom Checks Config tab
+                            </a>
+                        </p>
+                        <table class="rules-table">
+                            <tr>
+                                <td>Add a check</td>
+                                <td>New row, write your rule in the Instruction column in plain English</td>
+                            </tr>
+                            <tr>
+                                <td>Edit a check</td>
+                                <td>Update the Instruction column with your new rule</td>
+                            </tr>
+                            <tr>
+                                <td>Adjust weight</td>
+                                <td>Change the Weight column (higher = more impact on health score)</td>
+                            </tr>
+                            <tr>
+                                <td>Turn off a check</td>
+                                <td>Set the Active column to FALSE</td>
+                            </tr>
+                            <tr>
+                                <td>Delete a check</td>
+                                <td>Delete the entire row</td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <!-- CANNOT change -->
+                    <div class="cannot-panel">
+                        <p class="panel-heading">What you cannot change</p>
+                        <p class="panel-note">
+                            Checks highlighted in light blue are hardcoded. You can adjust their weight, but the pass/fail logic is fixed.
+                        </p>
+                        <div class="chip-group">
+                            <span class="chip">Price</span>
+                            <span class="chip">Link</span>
+                            <span class="chip">Availability</span>
+                            <span class="chip">Brand</span>
+                            <span class="chip">Google Product Category</span>
+                            <span class="chip">GTIN</span>
+                            <span class="chip">Condition</span>
+                            <span class="chip">Color</span>
+                            <span class="chip">Size</span>
+                            <span class="chip">Product Type</span>
+                            <span class="chip">Rating</span>
+                            <span class="chip">Title Quality</span>
+                            <span class="chip">Image Quality</span>
+                            <span class="chip">Description Quality</span>
+                            <span class="chip">Multiple Images</span>
+                            <span class="chip">Category Accuracy</span>
+                            <span class="chip">Color Matching</span>
+                            <span class="chip">Search Relevance</span>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+
+        <div class="pill-stack decorative" aria-hidden="true">
+            <div class="pill"></div>
+            <div class="pill"></div>
+            <div class="pill"></div>
+            <div class="pill"></div>
+            <div class="pill"></div>
+        </div>
+    </section>
+
+    <!-- ======================================================
+         SLIDE 4 — STEP 3: RUN THE AUDIT
+         ====================================================== -->
+    <section class="slide slide-4" id="slide-4" aria-label="Step 3 — Run the audit">
+        <div class="slide-content">
+            <div class="s4-inner">
+
+                <div class="slide-label reveal">
+                    <span class="step-badge">Step 3</span>
+                    <span class="tag-badge">Run the audit</span>
+                </div>
+
+                <h2 class="slide-title reveal">Submit the form and wait for your report</h2>
+
+                <div class="reveal">
+                    <a href="https://sparro-au.app.n8n.cloud/form/d245452d-14f5-4bb3-aad4-a69adc0d3abc"
+                       class="step-link" target="_blank" rel="noopener">
+                        Open the audit form &rarr;
+                    </a>
+                </div>
+
+                <div class="fields-list reveal">
+                    <div class="field-item">
+                        <div class="field-dot"></div>
+                        <div>
+                            <div class="field-name">Client name</div>
+                        </div>
+                    </div>
+                    <div class="field-item">
+                        <div class="field-dot"></div>
+                        <div>
+                            <div class="field-name">Google Sheet URL</div>
+                            <div class="field-hint">Paste the link to your copy of the template</div>
+                        </div>
+                    </div>
+                    <div class="field-item">
+                        <div class="field-dot"></div>
+                        <div>
+                            <div class="field-name">Tab name</div>
+                            <div class="field-hint">The name of the tab with the product data</div>
+                        </div>
+                    </div>
+                    <div class="field-item">
+                        <div class="field-dot"></div>
+                        <div>
+                            <div class="field-name">Client industry</div>
+                            <div class="field-hint">You can find the category in the 'google product category' column in your GMC download. e.g. fashion, electronics, beauty</div>
+                        </div>
+                    </div>
+                    <div class="field-item">
+                        <div class="field-dot"></div>
+                        <div>
+                            <div class="field-name">Number of products to audit</div>
+                            <div class="field-hint">You can run on a subset to test first</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="reveal">
+                    <div class="timing-pill">
+                        <div class="timing-dot"></div>
+                        Takes about 2-3 minutes depending on product count
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="pill-stack decorative" aria-hidden="true">
+            <div class="pill"></div>
+            <div class="pill"></div>
+            <div class="pill"></div>
+            <div class="pill"></div>
+            <div class="pill"></div>
+        </div>
+    </section>
+
+    <!-- ======================================================
+         SLIDE 5 — STEP 4: READ YOUR RESULTS
+         ====================================================== -->
+    <section class="slide slide-5" id="slide-5" aria-label="Step 4 — Read your results">
+        <div class="slide-content">
+            <div class="s5-inner">
+
+                <div class="slide-label reveal">
+                    <span class="step-badge">Step 4</span>
+                    <span class="tag-badge">Read your results</span>
+                </div>
+
+                <h2 class="slide-title reveal">Your report is a new Google Sheet tab 'issue overall', auto-created after the audit finishes</h2>
+
+                <div class="s5-cols reveal">
+
+                    <!-- Report tabs -->
+                    <div>
+                        <p class="panel-heading" style="margin-bottom: 0.5em; font-size: var(--h3-size);">What's in the report</p>
+                        <div class="tabs-list">
+                            <div class="tab-item">
+                                <span class="tab-pill">Sheet1</span>
+                                <span class="tab-desc">Health score, total products, pass rate per check</span>
+                            </div>
+                            <div class="tab-item">
+                                <span class="tab-pill">Weight Guide</span>
+                                <span class="tab-desc">Score legend, tier explanations, why each check matters</span>
+                            </div>
+                            <div class="tab-item">
+                                <span class="tab-pill">Issue tabs</span>
+                                <span class="tab-desc">One tab per failing check — every product that failed, with the specific issue flagged</span>
+                            </div>
+                        </div>
+                        <div class="tip-note" style="margin-top: 0.55em;">
+                            Start with the lowest-scoring checks in the Overview tab. Each issue tab shows exactly which products to fix.
+                        </div>
+                    </div>
+
+                    <!-- Health score legend -->
+                    <div class="score-panel">
+                        <p class="panel-heading" style="margin-bottom: 0.3em;">Health score legend</p>
+                        <div class="score-row">
+                            <div class="score-bar excellent"></div>
+                            <div>
+                                <div class="score-range">90-100%</div>
+                                <div class="score-label">Excellent</div>
+                            </div>
+                        </div>
+                        <div class="score-row">
+                            <div class="score-bar good"></div>
+                            <div>
+                                <div class="score-range">70-89%</div>
+                                <div class="score-label">Good</div>
+                            </div>
+                        </div>
+                        <div class="score-row">
+                            <div class="score-bar needs"></div>
+                            <div>
+                                <div class="score-range">50-69%</div>
+                                <div class="score-label">Needs work</div>
+                            </div>
+                        </div>
+                        <div class="score-row">
+                            <div class="score-bar critical"></div>
+                            <div>
+                                <div class="score-range">Below 50%</div>
+                                <div class="score-label">Critical — fix immediately</div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+
+        <div class="pill-stack decorative" aria-hidden="true">
+            <div class="pill"></div>
+            <div class="pill"></div>
+            <div class="pill"></div>
+            <div class="pill"></div>
+            <div class="pill"></div>
+        </div>
+    </section>
+
+    <script>
+        /* =============================================
+           SLIDE PRESENTATION CONTROLLER
+           Handles: scroll-based visibility, keyboard nav,
+           touch/swipe, progress bar, nav dots
+           ============================================= */
+        class SlidePresentation {
+            constructor() {
+                this.slides   = Array.from(document.querySelectorAll('.slide'));
+                this.total    = this.slides.length;
+                this.current  = 0;
+
+                this.progressBar = document.getElementById('progressBar');
+                this.navDotsEl   = document.getElementById('navDots');
+
+                this.setupNavDots();
+                this.setupIntersectionObserver();
+                this.setupKeyboardNav();
+                this.setupTouchNav();
+                this.updateProgress(0);
+            }
+
+            /* Build nav dot buttons */
+            setupNavDots() {
+                this.slides.forEach((_, i) => {
+                    const dot = document.createElement('button');
+                    dot.className  = 'nav-dot' + (i === 0 ? ' active' : '');
+                    dot.setAttribute('aria-label', 'Go to slide ' + (i + 1));
+                    dot.addEventListener('click', () => {
+                        this.slides[i].scrollIntoView({ behavior: 'smooth' });
+                    });
+                    this.navDotsEl.appendChild(dot);
+                });
+            }
+
+            /* Watch slides entering/leaving viewport */
+            setupIntersectionObserver() {
+                const opts = { root: null, threshold: 0.55 };
+                const obs  = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            entry.target.classList.add('visible');
+                            const idx = this.slides.indexOf(entry.target);
+                            if (idx !== -1) {
+                                this.current = idx;
+                                this.updateProgress(idx);
+                                this.updateDots(idx);
+                            }
+                        }
+                    });
+                }, opts);
+                this.slides.forEach(s => obs.observe(s));
+            }
+
+            /* Arrow keys + space + page up/down
+               Skip all navigation if the user is typing inside a contenteditable element
+               (fixes: pressing Space while editing jumps to the next slide) */
+            setupKeyboardNav() {
+                document.addEventListener('keydown', (e) => {
+                    // If focus is inside an editable element, let the browser handle it normally
+                    if (e.target.getAttribute('contenteditable')) return;
+
+                    switch (e.key) {
+                        case 'ArrowDown':
+                        case 'ArrowRight':
+                        case ' ':
+                        case 'PageDown':
+                            e.preventDefault();
+                            this.goTo(this.current + 1);
+                            break;
+                        case 'ArrowUp':
+                        case 'ArrowLeft':
+                        case 'PageUp':
+                            e.preventDefault();
+                            this.goTo(this.current - 1);
+                            break;
+                        case 'Home':
+                            e.preventDefault();
+                            this.goTo(0);
+                            break;
+                        case 'End':
+                            e.preventDefault();
+                            this.goTo(this.total - 1);
+                            break;
+                    }
+                });
+            }
+
+            /* Touch swipe support */
+            setupTouchNav() {
+                let startY = 0;
+                document.addEventListener('touchstart', (e) => {
+                    startY = e.touches[0].clientY;
+                }, { passive: true });
+                document.addEventListener('touchend', (e) => {
+                    const delta = startY - e.changedTouches[0].clientY;
+                    if (Math.abs(delta) > 40) {
+                        this.goTo(delta > 0 ? this.current + 1 : this.current - 1);
+                    }
+                }, { passive: true });
+            }
+
+            goTo(idx) {
+                const target = Math.max(0, Math.min(this.total - 1, idx));
+                this.slides[target].scrollIntoView({ behavior: 'smooth' });
+            }
+
+            updateProgress(idx) {
+                const pct = this.total > 1
+                    ? (idx / (this.total - 1)) * 100
+                    : 100;
+                this.progressBar.style.width = pct + '%';
+            }
+
+            updateDots(idx) {
+                const dots = this.navDotsEl.querySelectorAll('.nav-dot');
+                dots.forEach((d, i) => d.classList.toggle('active', i === idx));
+            }
+        }
+
+        new SlidePresentation();
+
+        /* =============================================
+           INLINE EDITOR
+           - Press E or hover top-left corner to activate
+           - Click any text to edit it
+           - Changes auto-saved to localStorage (instant) + to file (800ms debounce)
+           - "Save to file" button: first click picks the file, after that saves silently
+           ============================================= */
+        class InlineEditor {
+            constructor() {
+                this.isActive    = false;
+                this.toggle      = document.getElementById('editToggle');
+                this.saveBtn     = document.getElementById('editSave');
+                this.hotzone     = document.getElementById('editHotzone');
+                this.editLabel   = document.getElementById('editLabel');
+                this.hideTimeout = null;
+
+                // Elements users should be able to edit
+                this.editableSelectors = [
+                    '.page-title', '.page-subtitle',
+                    '.step-num', '.step-title', '.step-desc',
+                    '.slide-title', '.step-text', '.field-name', '.field-hint',
+                    '.tab-desc', '.score-label', '.score-range',
+                    '.panel-heading', '.panel-note', '.tip-note',
+                    '.timing-pill', '.handoff-note',
+                    '.tag-badge', '.step-badge',
+                ];
+
+                this.restoreFromLocalStorage();
+                this.setupHotzone();
+                this.setupToggle();
+                this.setupSave();
+                this.setupKeyboard();
+            }
+
+            /* Hotzone hover — show toggle button with 400ms grace period */
+            setupHotzone() {
+                this.hotzone.addEventListener('mouseenter', () => {
+                    clearTimeout(this.hideTimeout);
+                    this.toggle.classList.add('show');
+                });
+                this.hotzone.addEventListener('mouseleave', () => {
+                    this.hideTimeout = setTimeout(() => {
+                        if (!this.isActive) this.toggle.classList.remove('show');
+                    }, 400);
+                });
+                this.toggle.addEventListener('mouseenter', () => {
+                    clearTimeout(this.hideTimeout);
+                });
+                this.toggle.addEventListener('mouseleave', () => {
+                    this.hideTimeout = setTimeout(() => {
+                        if (!this.isActive) this.toggle.classList.remove('show');
+                    }, 400);
+                });
+                // Clicking hotzone directly also toggles
+                this.hotzone.addEventListener('click', () => this.toggleEditMode());
+            }
+
+            /* Toggle button click */
+            setupToggle() {
+                this.toggle.addEventListener('click', () => this.toggleEditMode());
+            }
+
+            /* Save button — pick file on first use, then write directly on subsequent saves.
+               Uses the File System Access API so no download prompt is needed after the first pick. */
+            setupSave() {
+                this.fileHandle   = null;   // FileSystemFileHandle — set once user picks the file
+                this.saveDebounce = null;   // debounce timer for auto-save on input
+
+                this.saveBtn.addEventListener('click', () => this.saveToFile());
+            }
+
+            /* E key toggles edit mode (skip if user is already typing) */
+            setupKeyboard() {
+                document.addEventListener('keydown', (e) => {
+                    if ((e.key === 'e' || e.key === 'E') &&
+                        !e.target.getAttribute('contenteditable') &&
+                        !e.metaKey && !e.ctrlKey) {
+                        this.toggleEditMode();
+                    }
+                });
+            }
+
+            toggleEditMode() {
+                this.isActive = !this.isActive;
+
+                if (this.isActive) {
+                    this.enableEditing();
+                } else {
+                    this.disableEditing();
+                }
+            }
+
+            enableEditing() {
+                document.body.classList.add('edit-mode');
+                this.toggle.classList.add('active', 'show');
+                this.saveBtn.classList.add('show');
+                this.editLabel.textContent = 'Done';
+
+                // Make matching elements editable
+                this.editableSelectors.forEach(sel => {
+                    document.querySelectorAll(sel).forEach(el => {
+                        el.setAttribute('contenteditable', 'true');
+                        el.setAttribute('spellcheck', 'false');
+
+                        // Save to localStorage immediately + auto-save to file after 800ms idle
+                        el.addEventListener('input', () => {
+                            this.saveToLocalStorage();
+                            this.scheduleSave();
+                        });
+                    });
+                });
+            }
+
+            disableEditing() {
+                document.body.classList.remove('edit-mode');
+                this.toggle.classList.remove('active');
+                if (!this.toggle.matches(':hover') && !this.hotzone.matches(':hover')) {
+                    this.toggle.classList.remove('show');
+                }
+                this.saveBtn.classList.remove('show');
+                this.editLabel.textContent = 'Edit';
+
+                // Remove contenteditable
+                document.querySelectorAll('[contenteditable="true"]').forEach(el => {
+                    el.removeAttribute('contenteditable');
+                });
+
+                this.saveToLocalStorage();
+            }
+
+            /* Save all editable content to localStorage keyed by element index */
+            saveToLocalStorage() {
+                const data = {};
+                this.editableSelectors.forEach(sel => {
+                    document.querySelectorAll(sel).forEach((el, i) => {
+                        data[sel + '__' + i] = el.innerHTML;
+                    });
+                });
+                localStorage.setItem('gmc-audit-guide-edits', JSON.stringify(data));
+            }
+
+            /* Restore saved edits on page load */
+            restoreFromLocalStorage() {
+                const raw = localStorage.getItem('gmc-audit-guide-edits');
+                if (!raw) return;
+                try {
+                    const data = JSON.parse(raw);
+                    this.editableSelectors.forEach(sel => {
+                        document.querySelectorAll(sel).forEach((el, i) => {
+                            const key = sel + '__' + i;
+                            if (data[key] !== undefined) el.innerHTML = data[key];
+                        });
+                    });
+                } catch (e) {
+                    // Ignore corrupted storage
+                }
+            }
+
+            /* Debounced auto-save: waits 800ms after last keystroke before writing to file
+               (like a word processor's auto-save — doesn't hammer the disk on every keystroke) */
+            scheduleSave() {
+                clearTimeout(this.saveDebounce);
+                this.saveDebounce = setTimeout(() => this.saveToFile(), 800);
+            }
+
+            /* Build clean HTML string — removes edit-mode classes and contenteditable
+               before writing, so the saved file opens in presentation mode by default */
+            getCleanHTML() {
+                // Clone the document so we can strip edit-mode state without affecting the live page
+                const clone = document.documentElement.cloneNode(true);
+
+                clone.classList.remove('edit-mode');
+                clone.querySelector('body').classList.remove('edit-mode');
+                clone.querySelectorAll('[contenteditable]').forEach(el => {
+                    el.removeAttribute('contenteditable');
+                });
+
+                return '<!DOCTYPE html>\n' + clone.outerHTML;
+            }
+
+            /* Save directly to the local file using the File System Access API.
+               First call opens a file picker so the user confirms the target file.
+               After that, saves silently with no prompts — true live save. */
+            async saveToFile() {
+                // Check browser support
+                if (!window.showSaveFilePicker) {
+                    alert('Live save is not supported in this browser.\nUse Chrome or Edge for this feature.');
+                    return;
+                }
+
+                // First time: ask the user to pick (or confirm) the file location
+                if (!this.fileHandle) {
+                    try {
+                        this.fileHandle = await window.showSaveFilePicker({
+                            suggestedName: 'audit-guide.html',
+                            types: [{ description: 'HTML file', accept: { 'text/html': ['.html'] } }],
+                        });
+                    } catch (e) {
+                        // User cancelled the picker — do nothing
+                        return;
+                    }
+                }
+
+                // Update button to show saving state
+                const originalLabel = this.saveBtn.textContent;
+                this.saveBtn.textContent = 'Saving...';
+                this.saveBtn.disabled = true;
+
+                try {
+                    const html     = this.getCleanHTML();
+                    const writable = await this.fileHandle.createWritable();
+                    await writable.write(html);
+                    await writable.close();
+
+                    // Show success briefly, then restore label
+                    this.saveBtn.textContent = 'Saved';
+                    setTimeout(() => {
+                        this.saveBtn.textContent = 'Save to file';
+                        this.saveBtn.disabled = false;
+                    }, 1500);
+                } catch (e) {
+                    this.saveBtn.textContent = 'Save failed';
+                    setTimeout(() => {
+                        this.saveBtn.textContent = 'Save to file';
+                        this.saveBtn.disabled = false;
+                    }, 2000);
+                    // If the handle is no longer valid (file moved/deleted), clear it so next click re-picks
+                    if (e.name === 'NotAllowedError' || e.name === 'InvalidStateError') {
+                        this.fileHandle = null;
+                    }
+                }
+            }
+        }
+
+        new InlineEditor();
+    </script>
+
+</body>
+</html>
